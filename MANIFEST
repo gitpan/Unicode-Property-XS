@@ -1,0 +1,8 @@
+Changes
+Makefile.PL
+MANIFEST
+ppport.h
+README
+XS.xs
+t/Unicode-Property-XS.t
+lib/Unicode/Property/XS.pm

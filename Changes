@@ -1,0 +1,9 @@
+Revision history for Perl extension Unicode::Property::XS.
+
+0.71  Apr 2008
+    - First Release.
+
+0.01  Fri Feb 15 22:20:11 2008
+	- original version; created by h2xs 1.23 with options
+		-A -n Unicode::Property::XS
+
