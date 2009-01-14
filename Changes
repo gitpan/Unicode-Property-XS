@@ -1,4 +1,7 @@
 Revision history for Perl extension Unicode::Property::XS.
+0.81  Jan 2009
+    - Update tests for Perl 5.10
+      Fix the range of legal codes.
 
 0.80  Jan 2009
     - Update the unicode property sources from Perl 5.10.0

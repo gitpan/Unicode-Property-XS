@@ -5,7 +5,11 @@ use ExtUtils::MakeMaker;
 WriteMakefile(
     NAME              => 'Unicode::Property::XS',
     VERSION_FROM      => 'lib/Unicode/Property/XS.pm', # finds $VERSION
-    PREREQ_PM         => {}, # e.g., Module::Name => 1.1
+    PREREQ_PM         => {}, 
+#    PREREQ_PM         => {
+#                            'Unicode::EastAsianWidth'   => '1.03',
+#                         },
+
     ($] >= 5.005 ?     ## Add these new keywords supported since 5.005
       (ABSTRACT_FROM  => 'lib/Unicode/Property/XS.pm', # retrieve abstract from module
        AUTHOR         => 'Mindos Cheng <mindos@gmail.com>') : ()),

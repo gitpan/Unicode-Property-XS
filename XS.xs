@@ -16,10 +16,10 @@ Legal(ucs_char_value)
         ord_low = ucs_char_value % 0x10000;
         if ((ucs_char_value >=   0xD800 && ucs_char_value <=  0xDFFF) ||
             (ucs_char_value >=   0xFDD0 && ucs_char_value <=  0xFDEF) ||
-            (ucs_char_value >=  0x40000 && ucs_char_value <= 0xE0000) ||
-            (ucs_char_value >=  0xE01F0 && ucs_char_value <= 0xEFFFF) || /* 0xE0001 .. E01EF */
-            (ord_low        >=   0xFFFE && ord_low        <=  0xFFFF) ||
-            (ucs_char_value >= 0x110000)) {
+            (ucs_char_value >=  0x30000 && ucs_char_value <= 0xDFFFF) || /* Planes 3 to 13 are unassigned */            
+            (ucs_char_value >=  0xE1000 && ucs_char_value <= 0xEFFFF) || /* 0xE0000 .. E0FFF */
+            (ord_low        >=   0xFFFE)                              || /* 0xFFFE and 0xFFFF */
+            (ucs_char_value >= 0x110000)) {  /* Plane 15, Plane 16 is reserved. */
             RETVAL = 0;
         } else {
             RETVAL = 1;
@@ -46,11 +46,7 @@ L(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,25,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,26,0 };
         static const unsigned char r[][128] = { 
 
         {
@@ -293,14 +289,14 @@ L(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -316,7 +312,7 @@ L(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -335,10 +331,6 @@ LC(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,11,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -450,14 +442,14 @@ LC(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -473,7 +465,7 @@ LC(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -492,10 +484,6 @@ Lu(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,10,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -598,14 +586,14 @@ Lu(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -621,7 +609,7 @@ Lu(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -640,10 +628,6 @@ Ll(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,10,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -746,14 +730,14 @@ Ll(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -769,7 +753,7 @@ Ll(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -781,10 +765,6 @@ Lt(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,3,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -831,14 +811,14 @@ Lt(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -854,7 +834,7 @@ Lt(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -869,10 +849,6 @@ Lm(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,12,13,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,14,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1015,14 +991,14 @@ Lm(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -1038,7 +1014,7 @@ Lm(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -1060,11 +1036,7 @@ Lo(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,24,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,25,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,25,0 };
         static const unsigned char r[][128] = { 
 
         {
@@ -1298,14 +1270,14 @@ Lo(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -1321,7 +1293,7 @@ Lo(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -1340,10 +1312,6 @@ M(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,16,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1490,7 +1458,35 @@ M(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0};        
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -1504,14 +1500,14 @@ M(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -1527,7 +1523,7 @@ M(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -1546,10 +1542,6 @@ Mn(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,16,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1696,7 +1688,35 @@ Mn(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0};        
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -1710,14 +1730,14 @@ Mn(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -1733,7 +1753,7 @@ Mn(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -1752,10 +1772,6 @@ Mc(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,8,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1840,14 +1856,14 @@ Mc(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -1863,7 +1879,7 @@ Mc(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -1875,10 +1891,6 @@ Me(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,2,0,0,0,0,0,0,3,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1925,14 +1937,14 @@ Me(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -1948,7 +1960,7 @@ Me(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -1967,10 +1979,6 @@ N(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,18,19,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -2154,14 +2162,14 @@ N(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -2177,7 +2185,7 @@ N(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -2196,10 +2204,6 @@ Nd(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,11,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -2311,14 +2315,14 @@ Nd(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -2334,7 +2338,7 @@ Nd(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -2350,10 +2354,6 @@ Nl(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         5,0,0,0,0,0,0,0,0,6,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -2423,14 +2423,14 @@ Nl(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -2446,7 +2446,7 @@ Nl(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -2465,10 +2465,6 @@ No(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,13,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -2598,14 +2594,14 @@ No(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -2621,7 +2617,7 @@ No(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -2637,10 +2633,6 @@ P(...)
         0,0,0,0,0,0,0,0,0,0,14,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,15,
         16,0,17,0,0,0,0,0,0,18,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -2818,14 +2810,14 @@ P(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -2841,7 +2833,7 @@ P(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -2856,10 +2848,6 @@ Pc(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -2912,14 +2900,14 @@ Pc(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -2935,7 +2923,7 @@ Pc(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -2950,10 +2938,6 @@ Pd(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -3042,14 +3026,14 @@ Pd(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -3065,7 +3049,7 @@ Pd(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -3080,10 +3064,6 @@ Ps(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -3181,14 +3161,14 @@ Ps(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -3204,7 +3184,7 @@ Ps(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -3219,10 +3199,6 @@ Pe(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,9,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -3320,14 +3296,14 @@ Pe(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -3343,7 +3319,7 @@ Pe(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -3355,10 +3331,6 @@ Pi(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,0,3,0,0,4,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -3414,14 +3386,14 @@ Pi(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -3437,7 +3409,7 @@ Pi(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -3449,10 +3421,6 @@ Pf(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,0,3,0,0,4,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -3508,14 +3476,14 @@ Pf(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -3531,7 +3499,7 @@ Pf(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -3547,10 +3515,6 @@ Po(...)
         0,0,0,0,0,0,0,0,0,0,12,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,13,
         14,0,15,0,0,0,0,0,0,16,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -3710,14 +3674,14 @@ Po(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -3733,7 +3697,7 @@ Po(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -3752,10 +3716,6 @@ S(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,21,22,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -3966,14 +3926,14 @@ S(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -3989,7 +3949,7 @@ S(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -4008,10 +3968,6 @@ Sm(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,8,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -4096,14 +4052,14 @@ Sm(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -4119,7 +4075,7 @@ Sm(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -4134,10 +4090,6 @@ Sc(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -4226,14 +4178,14 @@ Sc(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -4249,7 +4201,7 @@ Sc(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -4264,10 +4216,6 @@ Sk(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,5,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -4338,14 +4286,14 @@ Sk(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -4361,7 +4309,7 @@ Sk(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -4380,10 +4328,6 @@ So(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,18,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -4558,14 +4502,14 @@ So(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -4581,7 +4525,7 @@ So(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -4593,10 +4537,6 @@ Z(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,3,4,0,5,0,0,0,6,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -4670,14 +4610,14 @@ Z(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -4693,7 +4633,7 @@ Z(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -4705,10 +4645,6 @@ Zs(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,3,4,0,5,0,0,0,6,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -4782,14 +4718,14 @@ Zs(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -4805,7 +4741,7 @@ Zs(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -4817,10 +4753,6 @@ Zl(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -4858,14 +4790,14 @@ Zl(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -4881,7 +4813,7 @@ Zl(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -4893,10 +4825,6 @@ Zp(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -4934,14 +4862,14 @@ Zp(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -4957,7 +4885,7 @@ Zp(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -4979,11 +4907,7 @@ C(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,30,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,31,32,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,33 };
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,31,32 };
         static const unsigned char r[][128] = { 
 
         {
@@ -5264,22 +5188,41 @@ C(...)
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63},
-        {
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63}
  };
         static const unsigned char e_pn[] = {
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255};        
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -5293,14 +5236,14 @@ C(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -5316,7 +5259,7 @@ C(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -5328,10 +5271,6 @@ Cc(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -5369,14 +5308,14 @@ Cc(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -5392,7 +5331,7 @@ Cc(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -5411,10 +5350,6 @@ Cf(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -5480,6 +5415,34 @@ Cf(...)
         2,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
@@ -5494,14 +5457,14 @@ Cf(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -5517,7 +5480,7 @@ Cf(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -5528,10 +5491,6 @@ void
 Cs(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -5561,14 +5520,14 @@ Cs(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -5584,7 +5543,7 @@ Cs(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -5599,10 +5558,6 @@ Co(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,1,1,1,1,1,1,2,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -5637,14 +5592,14 @@ Co(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -5660,7 +5615,7 @@ Co(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -5682,11 +5637,7 @@ Cn(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,30,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,31,32,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,33 };
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,31,32 };
         static const unsigned char r[][128] = { 
 
         {
@@ -5967,22 +5918,41 @@ Cn(...)
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63},
-        {
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63}
  };
         static const unsigned char e_pn[] = {
         253,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255};        
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -5996,14 +5966,14 @@ Cn(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -6019,7 +5989,7 @@ Cn(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -6041,11 +6011,7 @@ BidiL(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,25,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,25,0 };
         static const unsigned char r[][128] = { 
 
         {
@@ -6279,14 +6245,14 @@ BidiL(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -6302,7 +6268,7 @@ BidiL(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -6314,10 +6280,6 @@ BidiLRE(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -6355,14 +6317,14 @@ BidiLRE(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -6378,7 +6340,7 @@ BidiLRE(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -6390,10 +6352,6 @@ BidiLRO(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -6431,14 +6389,14 @@ BidiLRO(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -6454,7 +6412,7 @@ BidiLRO(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -6470,10 +6428,6 @@ BidiR(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,0,
         0,0,5,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -6534,14 +6488,14 @@ BidiR(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -6557,7 +6511,7 @@ BidiR(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -6572,10 +6526,6 @@ BidiAL(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,4,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -6628,14 +6578,14 @@ BidiAL(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -6651,7 +6601,7 @@ BidiAL(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -6663,10 +6613,6 @@ BidiRLE(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -6704,14 +6650,14 @@ BidiRLE(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -6727,7 +6673,7 @@ BidiRLE(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -6739,10 +6685,6 @@ BidiRLO(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -6780,14 +6722,14 @@ BidiRLO(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -6803,7 +6745,7 @@ BidiRLO(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -6815,10 +6757,6 @@ BidiPDF(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -6856,14 +6794,14 @@ BidiPDF(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -6879,7 +6817,7 @@ BidiPDF(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -6898,10 +6836,6 @@ BidiEN(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -6977,14 +6911,14 @@ BidiEN(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -7000,7 +6934,7 @@ BidiEN(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -7015,10 +6949,6 @@ BidiES(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,4,5,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -7080,14 +7010,14 @@ BidiES(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -7103,7 +7033,7 @@ BidiES(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -7118,10 +7048,6 @@ BidiET(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -7210,14 +7136,14 @@ BidiET(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -7233,7 +7159,7 @@ BidiET(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -7245,10 +7171,6 @@ BidiAN(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -7286,14 +7208,14 @@ BidiAN(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -7309,7 +7231,7 @@ BidiAN(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -7324,10 +7246,6 @@ BidiCS(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -7389,14 +7307,14 @@ BidiCS(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -7412,7 +7330,7 @@ BidiCS(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -7431,10 +7349,6 @@ BidiNSM(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,16,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -7581,7 +7495,35 @@ BidiNSM(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0};        
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -7595,14 +7537,14 @@ BidiNSM(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -7618,7 +7560,7 @@ BidiNSM(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -7637,10 +7579,6 @@ BidiBN(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -7697,6 +7635,34 @@ BidiBN(...)
         2,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
@@ -7711,14 +7677,14 @@ BidiBN(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -7734,7 +7700,7 @@ BidiBN(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -7746,10 +7712,6 @@ BidiB(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -7796,14 +7758,14 @@ BidiB(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -7819,7 +7781,7 @@ BidiB(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -7831,10 +7793,6 @@ BidiS(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -7872,14 +7830,14 @@ BidiS(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -7895,7 +7853,7 @@ BidiS(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -7907,10 +7865,6 @@ BidiWS(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,3,4,0,5,0,0,0,6,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -7984,14 +7938,14 @@ BidiWS(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8007,7 +7961,7 @@ BidiWS(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8026,10 +7980,6 @@ BidiON(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,21,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -8231,14 +8181,14 @@ BidiON(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8254,7 +8204,7 @@ BidiON(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8269,10 +8219,6 @@ Arabic(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,4,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -8325,14 +8271,14 @@ Arabic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8348,7 +8294,7 @@ Arabic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8363,10 +8309,6 @@ Armenian(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -8410,14 +8352,14 @@ Armenian(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8433,7 +8375,7 @@ Armenian(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8445,10 +8387,6 @@ Balinese(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -8486,14 +8424,14 @@ Balinese(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8509,7 +8447,7 @@ Balinese(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8521,10 +8459,6 @@ Bengali(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -8562,14 +8496,14 @@ Bengali(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8585,7 +8519,7 @@ Bengali(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8597,10 +8531,6 @@ Bopomofo(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -8638,14 +8568,14 @@ Bopomofo(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8661,7 +8591,7 @@ Bopomofo(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8673,10 +8603,6 @@ Braille(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -8714,14 +8640,14 @@ Braille(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8737,7 +8663,7 @@ Braille(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8749,10 +8675,6 @@ Buginese(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -8790,14 +8712,14 @@ Buginese(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8813,7 +8735,7 @@ Buginese(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8825,10 +8747,6 @@ Buhid(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -8866,14 +8784,14 @@ Buhid(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8889,7 +8807,7 @@ Buhid(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8901,10 +8819,6 @@ CanadianAboriginal(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -8942,14 +8856,14 @@ CanadianAboriginal(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -8965,7 +8879,7 @@ CanadianAboriginal(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -8977,10 +8891,6 @@ Cherokee(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9018,14 +8928,14 @@ Cherokee(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9041,7 +8951,7 @@ Cherokee(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9053,10 +8963,6 @@ Coptic(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,0,0,0,0,3,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9103,14 +9009,14 @@ Coptic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9126,7 +9032,7 @@ Coptic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9142,10 +9048,6 @@ Cuneiform(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,2,3,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9188,14 +9090,14 @@ Cuneiform(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9211,7 +9113,7 @@ Cuneiform(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9227,10 +9129,6 @@ Cypriot(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9264,14 +9162,14 @@ Cypriot(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9287,7 +9185,7 @@ Cypriot(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9299,10 +9197,6 @@ Cyrillic(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,2,0,0,0,0,0,3,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9349,14 +9243,14 @@ Cyrillic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9372,7 +9266,7 @@ Cyrillic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9388,10 +9282,6 @@ Deseret(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9425,14 +9315,14 @@ Deseret(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9448,7 +9338,7 @@ Deseret(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9460,10 +9350,6 @@ Devanagari(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9501,14 +9387,14 @@ Devanagari(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9524,7 +9410,7 @@ Devanagari(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9536,10 +9422,6 @@ Ethiopic(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,2,0,0,0,0,0,0,3,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9586,14 +9468,14 @@ Ethiopic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9609,7 +9491,7 @@ Ethiopic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9621,10 +9503,6 @@ Georgian(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,2,0,0,0,0,0,0,3,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9671,14 +9549,14 @@ Georgian(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9694,7 +9572,7 @@ Georgian(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9706,10 +9584,6 @@ Glagolitic(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9747,14 +9621,14 @@ Glagolitic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9770,7 +9644,7 @@ Glagolitic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9786,10 +9660,6 @@ Gothic(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9823,14 +9693,14 @@ Gothic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9846,7 +9716,7 @@ Gothic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9865,10 +9735,6 @@ Greek(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -9935,14 +9801,14 @@ Greek(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -9958,7 +9824,7 @@ Greek(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -9970,10 +9836,6 @@ Gujarati(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -10011,14 +9873,14 @@ Gujarati(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10034,7 +9896,7 @@ Gujarati(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10046,10 +9908,6 @@ Gurmukhi(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -10087,14 +9945,14 @@ Gurmukhi(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10110,7 +9968,7 @@ Gurmukhi(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10132,11 +9990,7 @@ Han(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,7,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,0 };
         static const unsigned char r[][128] = { 
 
         {
@@ -10217,14 +10071,14 @@ Han(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10240,7 +10094,7 @@ Han(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10255,10 +10109,6 @@ Hangul(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,1,1,1,1,1,
         1,1,1,1,1,4,0,0,0,0,0,0,0,0,0,5,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -10320,14 +10170,14 @@ Hangul(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10343,7 +10193,7 @@ Hangul(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10355,10 +10205,6 @@ Hanunoo(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -10396,14 +10242,14 @@ Hanunoo(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10419,7 +10265,7 @@ Hanunoo(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10434,10 +10280,6 @@ Hebrew(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -10481,14 +10323,14 @@ Hebrew(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10504,7 +10346,7 @@ Hebrew(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10516,10 +10358,6 @@ Hiragana(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -10557,14 +10395,14 @@ Hiragana(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10580,7 +10418,7 @@ Hiragana(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10599,10 +10437,6 @@ Inherited(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,8,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -10677,7 +10511,35 @@ Inherited(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0};        
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -10691,14 +10553,14 @@ Inherited(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10714,7 +10576,7 @@ Inherited(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10726,10 +10588,6 @@ Kannada(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -10767,14 +10625,14 @@ Kannada(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10790,7 +10648,7 @@ Kannada(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10805,10 +10663,6 @@ Katakana(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -10852,14 +10706,14 @@ Katakana(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10875,7 +10729,7 @@ Katakana(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10891,10 +10745,6 @@ Kharoshthi(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -10928,14 +10778,14 @@ Kharoshthi(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -10951,7 +10801,7 @@ Kharoshthi(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -10963,10 +10813,6 @@ Khmer(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,2,3,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11013,14 +10859,14 @@ Khmer(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11036,7 +10882,7 @@ Khmer(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11048,10 +10894,6 @@ Lao(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11089,14 +10931,14 @@ Lao(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11112,7 +10954,7 @@ Lao(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11127,10 +10969,6 @@ Latin(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,7,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11210,14 +11048,14 @@ Latin(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11233,7 +11071,7 @@ Latin(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11245,10 +11083,6 @@ Limbu(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11286,14 +11120,14 @@ Limbu(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11309,7 +11143,7 @@ Limbu(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11325,10 +11159,6 @@ LinearB(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11362,14 +11192,14 @@ LinearB(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11385,7 +11215,7 @@ LinearB(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11397,10 +11227,6 @@ Malayalam(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11438,14 +11264,14 @@ Malayalam(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11461,7 +11287,7 @@ Malayalam(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11473,10 +11299,6 @@ Mongolian(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11514,14 +11336,14 @@ Mongolian(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11537,7 +11359,7 @@ Mongolian(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11549,10 +11371,6 @@ Myanmar(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11590,14 +11408,14 @@ Myanmar(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11613,7 +11431,7 @@ Myanmar(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11625,10 +11443,6 @@ NewTaiLue(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11666,14 +11480,14 @@ NewTaiLue(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11689,7 +11503,7 @@ NewTaiLue(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11701,10 +11515,6 @@ Nko(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11742,14 +11552,14 @@ Nko(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11765,7 +11575,7 @@ Nko(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11777,10 +11587,6 @@ Ogham(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11818,14 +11624,14 @@ Ogham(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11841,7 +11647,7 @@ Ogham(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11857,10 +11663,6 @@ OldItalic(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11894,14 +11696,14 @@ OldItalic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11917,7 +11719,7 @@ OldItalic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -11933,10 +11735,6 @@ OldPersian(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -11970,14 +11768,14 @@ OldPersian(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -11993,7 +11791,7 @@ OldPersian(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12005,10 +11803,6 @@ Oriya(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12046,14 +11840,14 @@ Oriya(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12069,7 +11863,7 @@ Oriya(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12085,10 +11879,6 @@ Osmanya(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12122,14 +11912,14 @@ Osmanya(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12145,7 +11935,7 @@ Osmanya(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12159,10 +11949,6 @@ PhagsPa(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12198,14 +11984,14 @@ PhagsPa(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12221,7 +12007,7 @@ PhagsPa(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12237,10 +12023,6 @@ Phoenician(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12274,14 +12056,14 @@ Phoenician(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12297,7 +12079,7 @@ Phoenician(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12309,10 +12091,6 @@ Runic(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12350,14 +12128,14 @@ Runic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12373,7 +12151,7 @@ Runic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12389,10 +12167,6 @@ Shavian(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12426,14 +12200,14 @@ Shavian(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12449,7 +12223,7 @@ Shavian(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12461,10 +12235,6 @@ Sinhala(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12502,14 +12272,14 @@ Sinhala(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12525,7 +12295,7 @@ Sinhala(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12539,10 +12309,6 @@ SylotiNagri(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12578,14 +12344,14 @@ SylotiNagri(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12601,7 +12367,7 @@ SylotiNagri(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12613,10 +12379,6 @@ Syriac(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12654,14 +12416,14 @@ Syriac(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12677,7 +12439,7 @@ Syriac(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12689,10 +12451,6 @@ Tagalog(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12730,14 +12488,14 @@ Tagalog(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12753,7 +12511,7 @@ Tagalog(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12765,10 +12523,6 @@ Tagbanwa(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12806,14 +12560,14 @@ Tagbanwa(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12829,7 +12583,7 @@ Tagbanwa(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12841,10 +12595,6 @@ TaiLe(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,2,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12882,14 +12632,14 @@ TaiLe(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12905,7 +12655,7 @@ TaiLe(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12917,10 +12667,6 @@ Tamil(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -12958,14 +12704,14 @@ Tamil(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -12981,7 +12727,7 @@ Tamil(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -12993,10 +12739,6 @@ Telugu(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13034,14 +12776,14 @@ Telugu(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13057,7 +12799,7 @@ Telugu(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13069,10 +12811,6 @@ Thaana(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13110,14 +12848,14 @@ Thaana(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13133,7 +12871,7 @@ Thaana(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13145,10 +12883,6 @@ Thai(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13186,14 +12920,14 @@ Thai(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13209,7 +12943,7 @@ Thai(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13221,10 +12955,6 @@ Tibetan(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13262,14 +12992,14 @@ Tibetan(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13285,7 +13015,7 @@ Tibetan(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13297,10 +13027,6 @@ Tifinagh(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13338,14 +13064,14 @@ Tifinagh(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13361,7 +13087,7 @@ Tifinagh(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13377,10 +13103,6 @@ Ugaritic(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13414,14 +13136,14 @@ Ugaritic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13437,7 +13159,7 @@ Ugaritic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13451,10 +13173,6 @@ Yi(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,1,2,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13490,14 +13208,14 @@ Yi(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13513,7 +13231,7 @@ Yi(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13525,10 +13243,6 @@ ASCIIHexDigit(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13566,14 +13280,14 @@ ASCIIHexDigit(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13589,7 +13303,7 @@ ASCIIHexDigit(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13601,10 +13315,6 @@ BidiControl(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13642,14 +13352,14 @@ BidiControl(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13665,7 +13375,7 @@ BidiControl(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13680,10 +13390,6 @@ Dash(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13772,14 +13478,14 @@ Dash(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13795,7 +13501,7 @@ Dash(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13807,10 +13513,6 @@ Deprecated(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,3,0,0,4,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -13866,14 +13568,14 @@ Deprecated(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -13889,7 +13591,7 @@ Deprecated(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -13908,10 +13610,6 @@ Diacritic(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,14,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14050,14 +13748,14 @@ Diacritic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -14073,7 +13771,7 @@ Diacritic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -14088,10 +13786,6 @@ Extender(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,7,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14180,14 +13874,14 @@ Extender(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -14203,7 +13897,7 @@ Extender(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -14218,10 +13912,6 @@ HexDigit(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14265,14 +13955,14 @@ HexDigit(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -14288,7 +13978,7 @@ HexDigit(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -14303,10 +13993,6 @@ Hyphen(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,8,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14395,14 +14081,14 @@ Hyphen(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -14418,7 +14104,7 @@ Hyphen(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -14440,11 +14126,7 @@ Ideographic(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,6,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,0 };
         static const unsigned char r[][128] = { 
 
         {
@@ -14516,14 +14198,14 @@ Ideographic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -14539,7 +14221,7 @@ Ideographic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -14551,10 +14233,6 @@ IDSBinaryOperator(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14592,14 +14270,14 @@ IDSBinaryOperator(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -14615,7 +14293,7 @@ IDSBinaryOperator(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -14627,10 +14305,6 @@ IDSTrinaryOperator(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14668,14 +14342,14 @@ IDSTrinaryOperator(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -14691,7 +14365,7 @@ IDSTrinaryOperator(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -14703,10 +14377,6 @@ JoinControl(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14744,14 +14414,14 @@ JoinControl(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -14767,7 +14437,7 @@ JoinControl(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -14779,10 +14449,6 @@ LogicalOrderException(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14820,14 +14486,14 @@ LogicalOrderException(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -14843,7 +14509,7 @@ LogicalOrderException(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -14854,10 +14520,6 @@ void
 NoncharacterCodePoint(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -14887,14 +14549,14 @@ NoncharacterCodePoint(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -14910,7 +14572,7 @@ NoncharacterCodePoint(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -14926,10 +14588,6 @@ OtherAlphabetic(...)
         0,0,0,0,0,0,0,0,0,0,10,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,11,0,
         0,0,12,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -15053,14 +14711,14 @@ OtherAlphabetic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -15076,7 +14734,7 @@ OtherAlphabetic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -15091,10 +14749,6 @@ OtherDefaultIgnorableCodePoint(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,6,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -15155,7 +14809,35 @@ OtherDefaultIgnorableCodePoint(...)
         253,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255};        
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -15169,14 +14851,14 @@ OtherDefaultIgnorableCodePoint(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -15192,7 +14874,7 @@ OtherDefaultIgnorableCodePoint(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -15211,10 +14893,6 @@ OtherGraphemeExtend(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,5,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -15272,14 +14950,14 @@ OtherGraphemeExtend(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -15295,7 +14973,7 @@ OtherGraphemeExtend(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -15307,10 +14985,6 @@ OtherIDStart(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,0,0,0,3,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -15357,14 +15031,14 @@ OtherIDStart(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -15380,7 +15054,7 @@ OtherIDStart(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -15392,10 +15066,6 @@ OtherIDContinue(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,2,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -15433,14 +15103,14 @@ OtherIDContinue(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -15456,7 +15126,7 @@ OtherIDContinue(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -15468,10 +15138,6 @@ OtherLowercase(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,3,4,5,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -15536,14 +15202,14 @@ OtherLowercase(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -15559,7 +15225,7 @@ OtherLowercase(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -15578,10 +15244,6 @@ OtherMath(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,7,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -15657,14 +15319,14 @@ OtherMath(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -15680,7 +15342,7 @@ OtherMath(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -15692,10 +15354,6 @@ OtherUppercase(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,2,3,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -15742,14 +15400,14 @@ OtherUppercase(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -15765,7 +15423,7 @@ OtherUppercase(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -15780,10 +15438,6 @@ PatternSyntax(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,7,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -15863,14 +15517,14 @@ PatternSyntax(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -15886,7 +15540,7 @@ PatternSyntax(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -15898,10 +15552,6 @@ PatternWhiteSpace(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,0,3,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -15948,14 +15598,14 @@ PatternWhiteSpace(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -15971,7 +15621,7 @@ PatternWhiteSpace(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -15986,10 +15636,6 @@ QuotationMark(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,5,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -16051,14 +15697,14 @@ QuotationMark(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -16074,7 +15720,7 @@ QuotationMark(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -16086,10 +15732,6 @@ Radical(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         0,0,0,0,0,0,0,0,0,0,0,2,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -16127,14 +15769,14 @@ Radical(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -16150,7 +15792,7 @@ Radical(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -16169,10 +15811,6 @@ SoftDotted(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,6,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -16239,14 +15877,14 @@ SoftDotted(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -16262,7 +15900,7 @@ SoftDotted(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -16277,10 +15915,6 @@ STerm(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,10,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,11,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -16396,14 +16030,14 @@ STerm(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -16419,7 +16053,7 @@ STerm(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -16435,10 +16069,6 @@ TerminalPunctuation(...)
         0,0,0,0,0,0,0,0,0,0,11,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,12,
         13,0,14,0,0,0,0,0,0,15,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -16589,14 +16219,14 @@ TerminalPunctuation(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -16612,7 +16242,7 @@ TerminalPunctuation(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -16634,10 +16264,6 @@ UnifiedIdeograph(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,5,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
         static const unsigned char r[][128] = { 
 
@@ -16692,14 +16318,14 @@ UnifiedIdeograph(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -16715,7 +16341,7 @@ UnifiedIdeograph(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -16730,10 +16356,6 @@ VariationSelector(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -16767,7 +16389,35 @@ VariationSelector(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0};        
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -16781,14 +16431,14 @@ VariationSelector(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -16804,7 +16454,7 @@ VariationSelector(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -16816,10 +16466,6 @@ WhiteSpace(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,3,4,0,5,0,0,0,6,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -16893,14 +16539,14 @@ WhiteSpace(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -16916,7 +16562,7 @@ WhiteSpace(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -16938,11 +16584,7 @@ Alphabetic(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,27,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,28,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,28,0 };
         static const unsigned char r[][128] = { 
 
         {
@@ -17203,14 +16845,14 @@ Alphabetic(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -17226,7 +16868,7 @@ Alphabetic(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -17245,10 +16887,6 @@ Lowercase(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,11,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -17360,14 +16998,14 @@ Lowercase(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -17383,7 +17021,7 @@ Lowercase(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -17402,10 +17040,6 @@ Uppercase(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,11,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -17517,14 +17151,14 @@ Uppercase(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -17540,7 +17174,7 @@ Uppercase(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -17559,10 +17193,6 @@ Math(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,8,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -17647,14 +17277,14 @@ Math(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -17670,7 +17300,7 @@ Math(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -17692,11 +17322,7 @@ IDStart(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,26,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,27,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,27,0 };
         static const unsigned char r[][128] = { 
 
         {
@@ -17948,14 +17574,14 @@ IDStart(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -17971,7 +17597,7 @@ IDStart(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -17993,11 +17619,7 @@ IDContinue(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,27,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,28,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,28,0 };
         static const unsigned char r[][128] = { 
 
         {
@@ -18248,7 +17870,35 @@ IDContinue(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0};        
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -18262,14 +17912,14 @@ IDContinue(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -18285,7 +17935,7 @@ IDContinue(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -18307,11 +17957,7 @@ Any(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,4,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,5 };
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,4 };
         static const unsigned char r[][128] = { 
 
         {
@@ -18319,15 +17965,6 @@ Any(...)
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,0,0,0,0,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63},
-        {
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
@@ -18365,14 +18002,14 @@ Any(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -18388,7 +18025,7 @@ Any(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -18410,11 +18047,7 @@ Assigned(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,29,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,30,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,30,0 };
         static const unsigned char r[][128] = { 
 
         {
@@ -18683,7 +18316,35 @@ Assigned(...)
         2,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0};        
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -18697,14 +18358,14 @@ Assigned(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -18720,7 +18381,7 @@ Assigned(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -18742,11 +18403,7 @@ Unassigned(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,30,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,31,32,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,33 };
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,31,32 };
         static const unsigned char r[][128] = { 
 
         {
@@ -19027,22 +18684,41 @@ Unassigned(...)
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63},
-        {
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63}
  };
         static const unsigned char e_pn[] = {
         253,255,255,255,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255};        
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -19056,14 +18732,14 @@ Unassigned(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -19079,7 +18755,7 @@ Unassigned(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -19091,10 +18767,6 @@ ASCII(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -19132,14 +18804,14 @@ ASCII(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -19155,7 +18827,7 @@ ASCII(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -19174,10 +18846,6 @@ Common(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,18,19,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -19351,6 +19019,34 @@ Common(...)
         2,0,0,0,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
@@ -19365,14 +19061,14 @@ Common(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -19388,7 +19084,7 @@ Common(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -19403,10 +19099,6 @@ EaF(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -19450,14 +19142,14 @@ EaF(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -19473,7 +19165,7 @@ EaF(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -19488,10 +19180,6 @@ EaH(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,3,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -19535,14 +19223,14 @@ EaH(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -19558,7 +19246,7 @@ EaH(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -19573,10 +19261,6 @@ EaA(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,1,1,1,1,1,1,6,7,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -19646,7 +19330,35 @@ EaA(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0};        
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -19660,14 +19372,14 @@ EaA(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -19683,7 +19395,7 @@ EaA(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -19695,10 +19407,6 @@ EaNa(...)
     PPCODE:                                                    // r = root pv = page_value pn = page_name
         static const unsigned char pv[] = { 
         2,0,0,0,0,0,0,0,0,3,4,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -19754,14 +19462,14 @@ EaNa(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -19777,7 +19485,7 @@ EaNa(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -19799,11 +19507,7 @@ EaW(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,12,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,13 };
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,12 };
         static const unsigned char r[][128] = { 
 
         {
@@ -19904,15 +19608,6 @@ EaW(...)
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63},
-        {
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63}
  };
 #define e_pv 0        
@@ -19929,14 +19624,14 @@ EaW(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -19952,7 +19647,7 @@ EaW(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -19971,10 +19666,6 @@ EaN(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -20103,6 +19794,34 @@ EaN(...)
         254,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
@@ -20117,14 +19836,14 @@ EaN(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -20140,7 +19859,7 @@ EaN(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -20162,11 +19881,7 @@ EaFullwidth0(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,12,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,13 };
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,12 };
         static const unsigned char r[][128] = { 
 
         {
@@ -20267,15 +19982,6 @@ EaFullwidth0(...)
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63},
-        {
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63}
  };
 #define e_pv 0        
@@ -20292,14 +19998,14 @@ EaFullwidth0(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -20315,7 +20021,7 @@ EaFullwidth0(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -20337,11 +20043,7 @@ EaFullwidth1(...)
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
         1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,12,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,13 };
+        1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,12 };
         static const unsigned char r[][128] = { 
 
         {
@@ -20442,15 +20144,6 @@ EaFullwidth1(...)
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63},
-        {
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,63}
  };
 #define e_pv 0        
@@ -20467,14 +20160,14 @@ EaFullwidth1(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -20490,7 +20183,7 @@ EaFullwidth1(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -20512,10 +20205,6 @@ EaHalfwidth0(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
         static const unsigned char r[][128] = { 
 
@@ -20623,7 +20312,35 @@ EaHalfwidth0(...)
         254,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0};        
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -20637,14 +20354,14 @@ EaHalfwidth0(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -20660,7 +20377,7 @@ EaHalfwidth0(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }
@@ -20682,10 +20399,6 @@ EaHalfwidth1(...)
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0 };
         static const unsigned char r[][128] = { 
 
@@ -20793,7 +20506,35 @@ EaHalfwidth1(...)
         254,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
         0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
         255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,255,
-        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0};        
+        255,255,255,255,255,255,255,255,255,255,255,255,255,255,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+        0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0};        
         unsigned int i;
 
         EXTEND(SP, items);
@@ -20807,14 +20548,14 @@ EaHalfwidth1(...)
 
             high = ucs_char >>  10;             /* divide 0x400 */
 
-            if( ucs_char < 0x40000 ) {                   /*  have table, ucs_char is in usual part  */ 
+            if( ucs_char < 0x30000 ) {                   /*  have table, ucs_char is in usual part  */ 
                 if( (idx = pv[high]) < 2 ) {
                     ucs_char = pv[high];                      /* pv = page_value, uniform value in this page */
                 } else {
                     low  = ucs_char & 0x3FF;             /* mod 0x400 */
                     ucs_char = (r[idx-2][low>>3] >> (low & 0x7)) & 1 ; // 8
                 }
-            } else if( ucs_char >= 0xE0001 && ucs_char <= 0xE01EF ) { // note: in a page
+            } else if( ucs_char >= 0xE0000 && ucs_char <= 0xE0FFF ) { // note: in a page
 #ifdef e_pv
                     ucs_char = e_pv ;                         /* e_pv = e_page_value */
 #undef e_pv
@@ -20830,7 +20571,7 @@ EaHalfwidth1(...)
                     ucs_char = 0;                /* FFFFE, FFFFF, 0x11xxxx or so... */
                 }
             } else {
-                    ucs_char = -1 ;               /* 0x40000, 0xC1234, or so... */
+                    ucs_char = 255;
             }
             mPUSHu(ucs_char);
         }

@@ -11,7 +11,7 @@ use vars qw( $VERSION );
 #our (@ISA, @EXPORT, @EXPORT_OK, %EXPORT_TAGS);
 our $Prefix;
 BEGIN {
-    $VERSION = '0.80';
+    $VERSION = '0.81';
 }
 
 # This allows declaration   use Unicode::Property::XS ':all';
